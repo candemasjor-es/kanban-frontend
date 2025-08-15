@@ -1,12 +1,63 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+└── 📁src                    // Raíz del frontend
+    ├── 📁store             // Configuración global de Redux Toolkit
+    │   └── store.js
+    │
+    ├── 📁assets            // Recursos estáticos
+    │   ├── 📁styles        // Estilos globales (variables, reset, themes)
+    │   └── react.svg       // Otros recursos como imágenes o íconos
+    │
+    ├── 📁components        // Componentes reutilizables y presentacionales (sin lógica de negocio)
+    │   └── 📁common
+    │       ├── 📁Layout    // Layout general de la app
+    │       │   ├── Layout.css
+    │       │   ├── SideBar.jsx
+    │       │   └── TopBar.jsx
+    │       └── 📁UI        // UI genérica (botones, tarjetas, etc.)
+    │           ├── Button.jsx
+    │           ├── Card.jsx
+    │           └── Spinner.jsx
+    │
+    ├── 📁features          // Dominios funcionales separados
+    │   ├── 📁auth
+    │   │   ├── 📁components
+    │   │   │   ├── Form.css
+    │   │   │   ├── LoginForm.jsx
+    │   │   │   └── RegisterForm.jsx
+    │   │   ├── 📁pages     // Vistas completas
+    │   │   │   ├── LoginPage.jsx
+    │   │   │   └── RegisterPage.jsx
+    │   │   ├── authSlice.js //estado + reducer + acciones
+    │   │   └── authService.js
+    │   │
+    │   ├── 📁business
+    │   │   ├── 📁components
+    │   │   ├── 📁pages
+    │   │   ├── businessService.js
+    │   │   └── businessSlice.js
+    │   │
+    │   ├── 📁properties
+    │   │   ├── 📁components
+    │   │   ├── 📁pages
+    │   │   ├── propertiesService.js
+    │   │   └── propertiesSlice.js
+    │   │
+    │   ├── 📁prospectos     // Otros módulos futuros
+    │   ├── 📁calendar
+    │   ├── 📁matching
+    │   └── 📁communications
+    │
+    ├── 📁hooks             // Hooks personalizados
+    │   └── useAuth.js
+    │
+    ├── 📁routes            // Rutas de navegación (React Router)
+    │   └── AppRouter.jsx
+    │
+    ├── 📁utils             // Funciones generales de utilidad
+    │   └── api.js          // Axios o configuración de endpoints
+    │
+    ├── App.jsx            // Componente raíz de la aplicación
+    ├── main.jsx           // Punto de entrada principal (ReactDOM)
+    ├── index.css          // Estilos base del proyecto
+    └── App.css            // Estilos globales específicos del componente App
+```
