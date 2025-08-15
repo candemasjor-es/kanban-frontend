@@ -3,9 +3,7 @@
     ├── 📁store             // Configuración global de Redux Toolkit
     │   └── store.js
     │
-    ├── 📁assets            // Recursos estáticos
-    │   ├── 📁styles        // Estilos globales (variables, reset, themes)
-    │   └── react.svg       // Otros recursos como imágenes o íconos
+    ├── 📁assets            // Recursos estáticos, imágenes, iconos...
     │
     ├── 📁components        // Componentes reutilizables y presentacionales (sin lógica de negocio)
     │   └── 📁common
@@ -29,23 +27,7 @@
     │   │   │   └── RegisterPage.jsx
     │   │   ├── authSlice.js //estado + reducer + acciones
     │   │   └── authService.js
-    │   │
-    │   ├── 📁business
-    │   │   ├── 📁components
-    │   │   ├── 📁pages
-    │   │   ├── businessService.js
-    │   │   └── businessSlice.js
-    │   │
-    │   ├── 📁properties
-    │   │   ├── 📁components
-    │   │   ├── 📁pages
-    │   │   ├── propertiesService.js
-    │   │   └── propertiesSlice.js
-    │   │
-    │   ├── 📁prospectos     // Otros módulos futuros
-    │   ├── 📁calendar
-    │   ├── 📁matching
-    │   └── 📁communications
+    │   └──📁calendar
     │
     ├── 📁hooks             // Hooks personalizados
     │   └── useAuth.js
