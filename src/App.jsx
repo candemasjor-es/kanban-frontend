@@ -1,11 +1,24 @@
-import "./App.css";
+import * as React from "react";
+import { Suspense } from "react";
+import { LinearProgress } from "@mui/material";
+import AppRouter from "./routes/AppRouter";
+import { useLocation } from "react-router-dom";
 
-function App() {
-  return (
-    <>
-      <h3>Kanban Frontend</h3>
-    </>
-  );
+function ScrollToTop() {
+    const { pathname } = useLocation();
+    React.useEffect(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }, [pathname]);
+    return null;
 }
 
-export default App;
+export default function App() {
+    return (
+        <>
+            <ScrollToTop />
+            <Suspense fallback={<LinearProgress />}>
+                <AppRouter />
+            </Suspense>
+        </>
+    );
+}
