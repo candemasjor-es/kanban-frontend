@@ -35,7 +35,7 @@ export const moveCard = createAsyncThunk(
     }
 );
 
-// --- State ---
+// --- Estado inicial ---
 const initialState = {
     boardId: null,
     board: null,
@@ -46,31 +46,32 @@ const initialState = {
 
 // helpers
 const findColumn = (columns, id) =>
-    columns.find((c) => String(c.id) === String(id));
+    columns?.find((c) => String(c.id) === String(id));
 
+// --- Slice ---
 const kanbanSlice = createSlice({
     name: "kanban",
     initialState,
     reducers: {
-        reorderColumns(state, action) {
-            const { sourceIndex, destinationIndex } = action.payload;
-            const [removed] = state.board.columns.splice(sourceIndex, 1);
-            state.board.columns.splice(destinationIndex, 0, removed);
-        },
+        // movimiento optimista solo de cards
         moveCardLocal(state, action) {
             const { cardId, fromColumnId, toColumnId, toPosition } =
                 action.payload;
+            if (!state.board) return;
             state._snapshot = JSON.parse(JSON.stringify(state.board));
+
             const fromCol = findColumn(state.board.columns, fromColumnId);
             const toCol = findColumn(state.board.columns, toColumnId);
             if (!fromCol || !toCol) return;
-            const srcIndex = fromCol.cards.findIndex(
+
+            const idx = fromCol.cards.findIndex(
                 (c) => String(c.id) === String(cardId)
             );
-            if (srcIndex < 0) return;
-            const [moved] = fromCol.cards.splice(srcIndex, 1);
-            const safe = Math.min(Number(toPosition), toCol.cards.length);
-            toCol.cards.splice(safe, 0, moved);
+            if (idx < 0) return;
+
+            const [moved] = fromCol.cards.splice(idx, 1);
+            const dst = Math.min(Number(toPosition), toCol.cards.length);
+            toCol.cards.splice(dst, 0, moved);
         },
         rollbackMove(state) {
             if (state._snapshot) {
@@ -94,22 +95,21 @@ const kanbanSlice = createSlice({
                 s.error = a.payload || a.error;
             })
             .addCase(moveCard.fulfilled, (s) => {
-                s._snapshot = null;
+                s._snapshot = null; // commit del optimista
             })
             .addCase(moveCard.rejected, (s, a) => {
                 s.error = a.payload || a.error;
                 if (s._snapshot) {
-                    s.board = s._snapshot;
+                    s.board = s._snapshot; // rollback
                     s._snapshot = null;
                 }
             });
     },
 });
 
-export const { reorderColumns, moveCardLocal, rollbackMove } =
-    kanbanSlice.actions;
+export const { moveCardLocal, rollbackMove } = kanbanSlice.actions;
 
-// --- Selectores memoizados (evita warnings) ---
+// --- Selectores memoizados ---
 const EMPTY_ARRAY = Object.freeze([]);
 const EMPTY_BOARD = Object.freeze({
     id: null,
@@ -124,4 +124,5 @@ export const selectColumns = createSelector(
 );
 export const selectKanbanLoading = (s) => s.kanban.loading;
 
+// --- Reducer por defecto ---
 export default kanbanSlice.reducer;

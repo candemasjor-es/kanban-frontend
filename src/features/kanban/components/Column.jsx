@@ -1,70 +1,73 @@
+// src/features/kanban/components/Column.jsx
 import * as React from "react";
 import { Paper, Box, Typography } from "@mui/material";
-import { Draggable } from "@hello-pangea/dnd";
-import StrictModeDroppable from "./StrictModeDroppablea";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 import CardItem from "./CardItem";
 
-export default function Column({ column, index }) {
-    const colId = String(column.id); // DnD requiere string
+function ColumnImpl({ column }) {
+    const colId = String(column.id);
     return (
-        <Draggable draggableId={colId} index={index}>
-            {(provided) => (
-                <Box
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    sx={{ width: 320, mr: 2 }}
-                >
-                    <Paper
-                        variant="outlined"
-                        sx={{ p: 2, bgcolor: "background.paper" }}
-                    >
-                        <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 700, mb: 1 }}
-                            {...provided.dragHandleProps}
-                        >
-                            {column.title}
-                        </Typography>
+        <Box sx={{ width: 320, mr: 2 }}>
+            <Paper
+                variant="outlined"
+                sx={{ p: 2, bgcolor: "background.paper" }}
+            >
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                    {column.title}
+                </Typography>
 
-                        <StrictModeDroppable droppableId={colId} type="CARD">
-                            {(dropProvided, snapshot) => (
-                                <Box
-                                    ref={dropProvided.innerRef}
-                                    {...dropProvided.droppableProps}
-                                    sx={{
-                                        minHeight: 20,
-                                        transition:
-                                            "background-color 150ms ease",
-                                        bgcolor: snapshot.isDraggingOver
-                                            ? "action.hover"
-                                            : "transparent",
-                                        p: 0.5,
-                                    }}
+                <Droppable droppableId={colId} type="CARD">
+                    {(dropProvided, snapshot) => (
+                        <Box
+                            ref={dropProvided.innerRef}
+                            {...dropProvided.droppableProps}
+                            sx={{
+                                minHeight: 20,
+                                transition: "background-color 120ms ease",
+                                bgcolor: snapshot.isDraggingOver
+                                    ? "action.hover"
+                                    : "transparent",
+                                p: 0.5,
+                            }}
+                        >
+                            {column.cards.map((card, idx) => (
+                                <Draggable
+                                    key={String(card.id)}
+                                    draggableId={String(card.id)}
+                                    index={idx}
                                 >
-                                    {column.cards.map((card, idx) => (
-                                        <Draggable
-                                            key={String(card.id)}
-                                            draggableId={String(card.id)}
-                                            index={idx}
+                                    {(dragProvided) => (
+                                        <Box
+                                            ref={dragProvided.innerRef}
+                                            {...dragProvided.draggableProps}
+                                            {...dragProvided.dragHandleProps}
+                                            style={
+                                                dragProvided.draggableProps
+                                                    .style
+                                            } // 👈 imprescindible para animar
                                         >
-                                            {(dragProvided) => (
-                                                <Box
-                                                    ref={dragProvided.innerRef}
-                                                    {...dragProvided.draggableProps}
-                                                    {...dragProvided.dragHandleProps}
-                                                >
-                                                    <CardItem card={card} />
-                                                </Box>
-                                            )}
-                                        </Draggable>
-                                    ))}
-                                    {dropProvided.placeholder}
-                                </Box>
-                            )}
-                        </StrictModeDroppable>
-                    </Paper>
-                </Box>
-            )}
-        </Draggable>
+                                            <CardItem card={card} />
+                                        </Box>
+                                    )}
+                                </Draggable>
+                            ))}
+                            {dropProvided.placeholder}
+                        </Box>
+                    )}
+                </Droppable>
+            </Paper>
+        </Box>
     );
 }
+
+// Memo evita rerender si no cambia la referencia de column/cards
+const Column = React.memo(
+    ColumnImpl,
+    (prev, next) =>
+        prev.column === next.column ||
+        (prev.column.id === next.column.id &&
+            prev.column.title === next.column.title &&
+            prev.column.cards === next.column.cards)
+);
+
+export default Column;

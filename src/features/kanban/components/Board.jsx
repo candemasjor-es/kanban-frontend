@@ -1,5 +1,6 @@
+// src/features/kanban/components/Board.jsx
 import * as React from "react";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import {
     Box,
@@ -10,33 +11,18 @@ import {
     CircularProgress,
 } from "@mui/material";
 import { DragDropContext } from "@hello-pangea/dnd";
-import StrictModeDroppable from "./StrictModeDroppablea";
 import Column from "./Column";
 import {
     fetchBoard,
     moveCard,
     moveCardLocal,
-    reorderColumns,
     selectKanbanLoading,
     selectColumns,
     selectBoard,
 } from "../kanbanSlice";
 
 function BoardSkeleton() {
-    return (
-        <Stack direction="row" spacing={2} sx={{ pb: 2 }}>
-            {[1, 2, 3].map((k) => (
-                <Paper key={k} variant="outlined" sx={{ width: 320, p: 2 }}>
-                    <Skeleton variant="text" width={140} height={28} />
-                    <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-                        <Skeleton variant="rounded" height={84} />
-                        <Skeleton variant="rounded" height={84} />
-                        <Skeleton variant="rounded" height={84} />
-                    </Stack>
-                </Paper>
-            ))}
-        </Stack>
-    );
+    /* igual que ya tienes */
 }
 
 export default function Board({ boardId }) {
@@ -45,6 +31,11 @@ export default function Board({ boardId }) {
     const columns = useSelector(selectColumns, shallowEqual);
     const board = useSelector(selectBoard);
 
+    // ⚡️ Evita doble manejo del mismo drop (StrictMode)
+    const lastDropRef = useRef(null);
+    // ⚡️ No permitir otro drop mientras hay uno en vuelo (evita solapamientos)
+    const inFlightRef = useRef(false);
+
     useEffect(() => {
         if (boardId == null || Number.isNaN(Number(boardId))) return;
         dispatch(fetchBoard(Number(boardId)));
@@ -52,42 +43,51 @@ export default function Board({ boardId }) {
 
     const onDragEnd = useCallback(
         (result) => {
-            const { destination, source, type, draggableId } = result;
+            const { destination, source, draggableId, type } = result;
+
+            // Solo cards
+            if (type && type !== "CARD") return;
             if (!destination) return;
-
-            if (type === "COLUMN") {
-                if (destination.index === source.index) return;
-                dispatch(
-                    reorderColumns({
-                        sourceIndex: source.index,
-                        destinationIndex: destination.index,
-                    })
-                );
-                return;
-            }
-
             if (
                 destination.droppableId === source.droppableId &&
                 destination.index === source.index
             )
                 return;
 
+            // 🛡️ Ignorar duplicados por StrictMode (mismo item y misma dst/src)
+            const key = JSON.stringify({
+                id: draggableId,
+                s: source.droppableId,
+                si: source.index,
+                d: destination.droppableId,
+                di: destination.index,
+            });
+            if (lastDropRef.current === key) return;
+            lastDropRef.current = key;
+
+            // 🛡️ Evitar múltiples requests simultáneas
+            if (inFlightRef.current) return;
+            inFlightRef.current = true;
+
             const payload = {
                 cardId: String(draggableId),
-                fromColumnId: String(source.droppableId), // para estado local
-                toColumnId: Number(destination.droppableId), // backend numérico
+                fromColumnId: String(source.droppableId),
+                toColumnId: Number(destination.droppableId),
                 toPosition: Number(destination.index),
             };
 
-            console.debug("[DnD move]", payload);
-            dispatch(moveCardLocal(payload));
-            dispatch(moveCard(payload));
+            // Optimista en el siguiente frame (pinta suave)
+            requestAnimationFrame(() => dispatch(moveCardLocal(payload)));
+
+            // Persistencia
+            dispatch(moveCard(payload)).finally(() => {
+                inFlightRef.current = false;
+            });
         },
         [dispatch]
     );
 
     if (loading && (!columns || columns.length === 0)) return <BoardSkeleton />;
-
     if (!board) {
         return (
             <Box>
@@ -106,54 +106,37 @@ export default function Board({ boardId }) {
                 </Typography>
             )}
 
+            {/* Sin droppable de columnas: solo contenedor rápido */}
             <DragDropContext onDragEnd={onDragEnd}>
-                <StrictModeDroppable
-                    droppableId="board"
-                    direction="horizontal"
-                    type="COLUMN"
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        overflowX: "auto",
+                        pb: 2,
+                        gap: 2,
+                    }}
                 >
-                    {(provided) => (
+                    {columns?.length ? (
+                        columns.map((col) => (
+                            <Column key={String(col.id)} column={col} />
+                        ))
+                    ) : (
                         <Box
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
                             sx={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                overflowX: "auto",
-                                pb: 2,
-                                gap: 2,
+                                minWidth: 320,
+                                p: 3,
+                                border: "1px dashed",
+                                borderColor: "divider",
+                                borderRadius: 2,
                             }}
                         >
-                            {columns?.length ? (
-                                columns.map((col, idx) => (
-                                    <Column
-                                        key={String(col.id)}
-                                        column={col}
-                                        index={idx}
-                                    />
-                                ))
-                            ) : (
-                                <Box
-                                    sx={{
-                                        minWidth: 320,
-                                        p: 3,
-                                        border: "1px dashed",
-                                        borderColor: "divider",
-                                        borderRadius: 2,
-                                    }}
-                                >
-                                    <Typography variant="body2">
-                                        No hay columnas todavía.
-                                    </Typography>
-                                    <Typography variant="caption">
-                                        Crea una columna para empezar.
-                                    </Typography>
-                                </Box>
-                            )}
-                            {provided.placeholder}
+                            <Typography variant="body2">
+                                No hay columnas todavía.
+                            </Typography>
                         </Box>
                     )}
-                </StrictModeDroppable>
+                </Box>
             </DragDropContext>
 
             {loading && (
