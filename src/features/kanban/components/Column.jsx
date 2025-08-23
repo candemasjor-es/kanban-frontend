@@ -1,10 +1,11 @@
 import * as React from "react";
 import { Paper, Box, Typography } from "@mui/material";
-import { Droppable, Draggable } from "@hello-pangea/dnd";
+import { Draggable } from "@hello-pangea/dnd";
+import StrictModeDroppable from "./StrictModeDroppablea";
 import CardItem from "./CardItem";
 
 export default function Column({ column, index }) {
-    const colId = String(column.id);
+    const colId = String(column.id); // DnD requiere string
     return (
         <Draggable draggableId={colId} index={index}>
             {(provided) => (
@@ -24,7 +25,8 @@ export default function Column({ column, index }) {
                         >
                             {column.title}
                         </Typography>
-                        <Droppable droppableId={colId} type="CARD">
+
+                        <StrictModeDroppable droppableId={colId} type="CARD">
                             {(dropProvided, snapshot) => (
                                 <Box
                                     ref={dropProvided.innerRef}
@@ -59,7 +61,7 @@ export default function Column({ column, index }) {
                                     {dropProvided.placeholder}
                                 </Box>
                             )}
-                        </Droppable>
+                        </StrictModeDroppable>
                     </Paper>
                 </Box>
             )}

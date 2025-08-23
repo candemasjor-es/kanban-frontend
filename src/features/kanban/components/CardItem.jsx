@@ -21,7 +21,7 @@ export default function CardItem({ card }) {
                         {card.description}
                     </Typography>
                 )}
-                {card.tags?.length > 0 && (
+                {!!card.tags?.length && (
                     <Stack
                         direction="row"
                         spacing={1}

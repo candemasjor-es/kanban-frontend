@@ -40,8 +40,6 @@ function SideBarContent({ onNavigate }) {
         navigate(to);
     };
 
-    const selected = (to) => location.pathname === to;
-
     return (
         <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
             <Toolbar sx={{ px: 2 }}>
@@ -52,7 +50,7 @@ function SideBarContent({ onNavigate }) {
             <Divider />
             <List sx={{ px: 1 }}>
                 <ListItemButton
-                    selected={selected("/")}
+                    selected={location.pathname === "/"}
                     onClick={() => go("/")}
                 >
                     <ListItemIcon>
@@ -135,5 +133,4 @@ export default function SideBar({
         </Drawer>
     );
 }
-
 export const SIDEBAR_WIDTH = DRAWER_WIDTH;

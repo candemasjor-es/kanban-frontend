@@ -9,9 +9,9 @@ export default function TopBar({ title = "Tablero", onMenuClick }) {
             color="inherit"
             elevation={0}
             sx={{
-                borderBottom: "1px solid rgba(0,0,0,0.08)",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
                 backdropFilter: "saturate(180%) blur(8px)",
-                backgroundColor: "rgba(255,255,255,0.85)",
+                backgroundColor: "rgba(23,25,31,0.85)",
             }}
         >
             <Toolbar>

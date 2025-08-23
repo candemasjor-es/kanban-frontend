@@ -11,10 +11,8 @@ function KanbanIndexRedirect() {
             .list()
             .then((list) => {
                 if (!mounted) return;
-                const firstId = list?.[0]?.id;
-                navigate(firstId ? `/kanban/${firstId}` : `/kanban/1`, {
-                    replace: true,
-                });
+                const firstId = list?.[0]?.id ?? 1;
+                navigate(`/kanban/${firstId}`, { replace: true });
             })
             .catch(() => navigate(`/kanban/1`, { replace: true }));
         return () => {

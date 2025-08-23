@@ -1,16 +1,16 @@
 import * as React from "react";
 import { useEffect, useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import {
     Box,
-    CircularProgress,
-    Alert,
     Typography,
     Paper,
     Stack,
     Skeleton,
+    CircularProgress,
 } from "@mui/material";
-import { DragDropContext, Droppable } from "@hello-pangea/dnd";
+import { DragDropContext } from "@hello-pangea/dnd";
+import StrictModeDroppable from "./StrictModeDroppablea";
 import Column from "./Column";
 import {
     fetchBoard,
@@ -42,7 +42,7 @@ function BoardSkeleton() {
 export default function Board({ boardId }) {
     const dispatch = useDispatch();
     const loading = useSelector(selectKanbanLoading);
-    const columns = useSelector(selectColumns);
+    const columns = useSelector(selectColumns, shallowEqual);
     const board = useSelector(selectBoard);
 
     useEffect(() => {
@@ -63,8 +63,6 @@ export default function Board({ boardId }) {
                         destinationIndex: destination.index,
                     })
                 );
-                // Persistir reorden de columnas (opcional):
-                // columnsApi.update({ columnId: columns[source.index].id, boardId, toIndex: destination.index });
                 return;
             }
 
@@ -75,37 +73,41 @@ export default function Board({ boardId }) {
                 return;
 
             const payload = {
-                cardId: draggableId,
-                boardId: Number(boardId),
-                fromColumnId: source.droppableId,
-                toColumnId: destination.droppableId,
-                toIndex: destination.index,
+                cardId: String(draggableId),
+                fromColumnId: String(source.droppableId), // para estado local
+                toColumnId: Number(destination.droppableId), // backend numérico
+                toPosition: Number(destination.index),
             };
 
+            console.debug("[DnD move]", payload);
             dispatch(moveCardLocal(payload));
             dispatch(moveCard(payload));
         },
-        [dispatch, boardId]
+        [dispatch]
     );
 
-    if (loading && (!columns || columns.length === 0)) {
-        return <BoardSkeleton />;
-    }
+    if (loading && (!columns || columns.length === 0)) return <BoardSkeleton />;
 
     if (!board) {
-        return <Alert severity="error">No se pudo cargar el tablero.</Alert>;
+        return (
+            <Box>
+                <Paper sx={{ p: 2 }}>
+                    <Typography>No se pudo cargar el tablero.</Typography>
+                </Paper>
+            </Box>
+        );
     }
 
     return (
         <Box>
-            {board?.title && (
+            {!!board?.title && (
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                     {board.title}
                 </Typography>
             )}
 
             <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable
+                <StrictModeDroppable
                     droppableId="board"
                     direction="horizontal"
                     type="COLUMN"
@@ -138,7 +140,6 @@ export default function Board({ boardId }) {
                                         border: "1px dashed",
                                         borderColor: "divider",
                                         borderRadius: 2,
-                                        color: "text.secondary",
                                     }}
                                 >
                                     <Typography variant="body2">
@@ -152,7 +153,7 @@ export default function Board({ boardId }) {
                             {provided.placeholder}
                         </Box>
                     )}
-                </Droppable>
+                </StrictModeDroppable>
             </DragDropContext>
 
             {loading && (

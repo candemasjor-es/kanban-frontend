@@ -1,6 +1,11 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+    createSlice,
+    createAsyncThunk,
+    createSelector,
+} from "@reduxjs/toolkit";
 import { boardsApi, cardsApi } from "../../utils/api";
 
+// --- Thunks ---
 export const fetchBoard = createAsyncThunk(
     "kanban/fetchBoard",
     async (boardId, { rejectWithValue }) => {
@@ -17,19 +22,9 @@ export const fetchBoard = createAsyncThunk(
 
 export const moveCard = createAsyncThunk(
     "kanban/moveCard",
-    async (
-        { cardId, boardId, fromColumnId, toColumnId, toIndex },
-        { rejectWithValue }
-    ) => {
+    async ({ cardId, toColumnId, toPosition }, { rejectWithValue }) => {
         try {
-            const data = await cardsApi.move({
-                cardId,
-                boardId,
-                fromColumnId,
-                toColumnId,
-                toIndex,
-            });
-            return data;
+            return await cardsApi.move({ cardId, toColumnId, toPosition });
         } catch (err) {
             return rejectWithValue(
                 err?.response?.data || {
@@ -40,6 +35,7 @@ export const moveCard = createAsyncThunk(
     }
 );
 
+// --- State ---
 const initialState = {
     boardId: null,
     board: null,
@@ -48,6 +44,7 @@ const initialState = {
     _snapshot: null,
 };
 
+// helpers
 const findColumn = (columns, id) =>
     columns.find((c) => String(c.id) === String(id));
 
@@ -57,25 +54,23 @@ const kanbanSlice = createSlice({
     reducers: {
         reorderColumns(state, action) {
             const { sourceIndex, destinationIndex } = action.payload;
-            const cols = state.board.columns;
-            const [removed] = cols.splice(sourceIndex, 1);
-            cols.splice(destinationIndex, 0, removed);
+            const [removed] = state.board.columns.splice(sourceIndex, 1);
+            state.board.columns.splice(destinationIndex, 0, removed);
         },
         moveCardLocal(state, action) {
-            const { cardId, fromColumnId, toColumnId, toIndex } =
+            const { cardId, fromColumnId, toColumnId, toPosition } =
                 action.payload;
             state._snapshot = JSON.parse(JSON.stringify(state.board));
-            const columns = state.board.columns;
-            const fromCol = findColumn(columns, fromColumnId);
-            const toCol = findColumn(columns, toColumnId);
+            const fromCol = findColumn(state.board.columns, fromColumnId);
+            const toCol = findColumn(state.board.columns, toColumnId);
             if (!fromCol || !toCol) return;
             const srcIndex = fromCol.cards.findIndex(
                 (c) => String(c.id) === String(cardId)
             );
             if (srcIndex < 0) return;
             const [moved] = fromCol.cards.splice(srcIndex, 1);
-            const safeIndex = Math.min(toIndex, toCol.cards.length);
-            toCol.cards.splice(safeIndex, 0, moved);
+            const safe = Math.min(Number(toPosition), toCol.cards.length);
+            toCol.cards.splice(safe, 0, moved);
         },
         rollbackMove(state) {
             if (state._snapshot) {
@@ -85,27 +80,27 @@ const kanbanSlice = createSlice({
         },
     },
     extraReducers: (b) => {
-        b.addCase(fetchBoard.pending, (state) => {
-            state.loading = true;
-            state.error = null;
+        b.addCase(fetchBoard.pending, (s) => {
+            s.loading = true;
+            s.error = null;
         })
-            .addCase(fetchBoard.fulfilled, (state, action) => {
-                state.loading = false;
-                state.boardId = Number(action.payload.boardId);
-                state.board = action.payload.board;
+            .addCase(fetchBoard.fulfilled, (s, a) => {
+                s.loading = false;
+                s.boardId = Number(a.payload.boardId);
+                s.board = a.payload.board;
             })
-            .addCase(fetchBoard.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload || action.error;
+            .addCase(fetchBoard.rejected, (s, a) => {
+                s.loading = false;
+                s.error = a.payload || a.error;
             })
-            .addCase(moveCard.fulfilled, (state) => {
-                state._snapshot = null;
+            .addCase(moveCard.fulfilled, (s) => {
+                s._snapshot = null;
             })
-            .addCase(moveCard.rejected, (state, action) => {
-                state.error = action.payload || action.error;
-                if (state._snapshot) {
-                    state.board = state._snapshot;
-                    state._snapshot = null;
+            .addCase(moveCard.rejected, (s, a) => {
+                s.error = a.payload || a.error;
+                if (s._snapshot) {
+                    s.board = s._snapshot;
+                    s._snapshot = null;
                 }
             });
     },
@@ -113,7 +108,20 @@ const kanbanSlice = createSlice({
 
 export const { reorderColumns, moveCardLocal, rollbackMove } =
     kanbanSlice.actions;
-export const selectBoard = (s) => s.kanban.board;
-export const selectColumns = (s) => s.kanban.board?.columns || [];
+
+// --- Selectores memoizados (evita warnings) ---
+const EMPTY_ARRAY = Object.freeze([]);
+const EMPTY_BOARD = Object.freeze({
+    id: null,
+    title: "",
+    columns: EMPTY_ARRAY,
+});
+
+export const selectBoard = (s) => s.kanban.board ?? EMPTY_BOARD;
+export const selectColumns = createSelector(
+    (s) => s.kanban.board?.columns,
+    (cols) => cols ?? EMPTY_ARRAY
+);
 export const selectKanbanLoading = (s) => s.kanban.loading;
+
 export default kanbanSlice.reducer;

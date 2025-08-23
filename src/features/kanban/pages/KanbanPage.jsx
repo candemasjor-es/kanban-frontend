@@ -6,11 +6,10 @@ import Layout from "../../../components/common/Layout/Layout";
 
 export default function KanbanPage() {
     const { boardId } = useParams();
-    const numericId = Number(boardId);
     return (
-        <Layout title="Tablero Kanban">
+        <Layout title="Default Board1">
             <Box>
-                <Board boardId={numericId} />
+                <Board boardId={Number(boardId)} />
             </Box>
         </Layout>
     );
